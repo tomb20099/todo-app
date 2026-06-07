@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="TaskMaster Pro - Advanced To-Do List App">
+    <meta name="theme-color" content="#6366f1">
+    <title>TaskMaster Pro - Productivity Made Simple</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f9fafb;
+            --card: #ffffff;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --border: #e5e7eb;
+        }
+        body.dark { --bg: #1f2937; --card: #111827; --text: #f9fafb; --text-light: #d1d5db; --border: #374151; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            transition: background 0.3s, color 0.3s;
+        }
+        .app-container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 250px 1fr; min-height: 100vh; }
+        @media (max-width: 768px) { .app-container { grid-template-columns: 1fr; } }
+        
+        .sidebar {
+            background: var(--card);
+            border-right: 1px solid var(--border);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        @media (max-width: 768px) { .sidebar { display: none; } }
+        
+        .main { display: flex; flex-direction: column; background: var(--bg); }
+        
+        .header {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .content { flex: 1; padding: 30px; overflow-y: auto; }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .nav-section { margin-bottom: 30px; }
+        
+        .nav-section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--text-light);
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .nav-item {
+            padding: 10px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 5px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-light);
+        }
+        
+        .nav-item:hover { background: var(--bg); color: var(--text); }
+        .nav-item.active { background: var(--primary); color: white; }
+        
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+        
+        .card-title { font-size: 18px; font-weight: 600; margin-bottom: 15px; }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        input, textarea, select {
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            background: var(--bg);
+            color: var(--text);
+            font-family: inherit;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        .input-group input { flex: 1; }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: var(--border); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 15px;
+            background: var(--bg);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--primary);
+            transition: all 0.2s;
+        }
+        
+        .task-item:hover { transform: translateX(5px); }
+        .task-item.completed { opacity: 0.6; }
+        .task-item.completed .task-title { text-decoration: line-through; }
+        
+        .task-checkbox { width: 20px; height: 20px; margin-top: 2px; cursor: pointer; accent-color: var(--success); }
+        
+        .task-content { flex: 1; }
+        .task-title { font-weight: 500; margin-bottom: 5px; }
+        
+        .task-meta { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; }
+        
+        .badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .badge-priority-high { background: rgba(239, 68, 68, 0.2); color: #dc2626; }
+        .badge-priority-medium { background: rgba(245, 158, 11, 0.2); color: #d97706; }
+        .badge-priority-low { background: rgba(16, 185, 129, 0.2); color: #059669; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        
+        .stat-number { font-size: 32px; font-weight: 700; color: var(--primary); }
+        .stat-label { font-size: 12px; color: var(--text-light); margin-top: 5px; text-transform: uppercase; }
+        
+        .pricing-card {
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .pricing-card.featured {
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+        
+        .pricing-price {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 15px 0;
+        }
+        
+        .feature-list {
+            list-style: none;
+            margin: 20px 0;
+            text-align: left;
+        }
+        
+        .feature-list li {
+            padding: 8px 0;
+            font-size: 14px;
+            color: var(--text-light);
+        }
+        
+        .feature-list li:before {
+            content: "✓ ";
+            color: var(--success);
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+        
+        .theme-toggle {
+            background: transparent;
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        
+        .premium-badge {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .upgrade-banner {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .pricing-card.featured { transform: scale(1); }
+            .input-group { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="logo">✓ TaskMaster</div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Menu</div>
+                <div class="nav-item active" onclick="showPage('dashboard', event)" style="cursor: pointer;">📊 Dashboard</div>
+                <div class="nav-item" onclick="showPage('tasks', event)" style="cursor: pointer;">✓ My Tasks</div>
+                <div class="nav-item" onclick="showPage('projects', event)" style="cursor: pointer;">📁 Projects</div>
+                <div class="nav-item" onclick="showPage('calendar', event)" style="cursor: pointer;">📅 Calendar</div>
+                <div class="nav-item" onclick="showPage('team', event)" style="cursor: pointer;">👥 Team</div>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Account</div>
+                <div class="nav-item" onclick="showPage('settings', event)" style="cursor: pointer;">⚙️ Settings</div>
+                <div class="nav-item" onclick="showPage('pricing', event)" style="cursor: pointer;">💳 Upgrade <span class="premium-badge">PRO</span></div>
+                <div class="nav-item" onclick="showPage('analytics', event)" style="cursor: pointer;">📈 Analytics</div>
+            </div>
+        </div>
+        
+        <div class="main">
+            <div class="header">
+                <h1>Welcome back, User!</h1>
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            </div>
+            
+            <div class="content">
+                <div id="dashboard-page" class="page">
+                    <h2 style="margin-bottom: 20px;">📊 Dashboard</h2>
+                    
+                    <div class="upgrade-banner">
+                        <div>
+                            <strong>Unlock Premium Features</strong>
+                            <p style="font-size: 13px; margin-top: 5px;">Get unlimited tasks, team collaboration, and more!</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="showPage('pricing', event)">Upgrade Now</button>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number" id="stat-total">0</div>
+                            <div class="stat-label">Total Tasks</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="stat-completed">0</div>
+                            <div class="stat-label">Completed</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="stat-overdue">0</div>
+                            <div class="stat-label">Overdue</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="stat-completion">0%</div>
+                            <div class="stat-label">Completion</div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-title">Recent Tasks</div>
+                        <div id="recent-tasks"></div>
+                    </div>
+                </div>
+                
+                <div id="tasks-page" class="page" style="display: none;">
+                    <h2 style="margin-bottom: 20px;">✓ My Tasks</h2>
+                    
+                    <div class="card">
+                        <div class="input-group">
+                            <input type="text" id="taskInput" placeholder="Add a new task..." onkeypress="if(event.key==='Enter') addTask()">
+                            <button class="btn btn-primary" onclick="addTask()">Add Task</button>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                            <select id="priorityFilter" onchange="filterTasks()">
+                                <option value="all">All Priorities</option>
+                                <option value="high">🔴 High</option>
+                                <option value="medium">🟡 Medium</option>
+                                <option value="low">🟢 Low</option>
+                            </select>
+                            <select id="statusFilter" onchange="filterTasks()">
+                                <option value="all">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                        
+                        <div id="tasks-list"></div>
+                    </div>
+                </div>
+                
+                <div id="pricing-page" class="page" style="display: none;">
+                    <h2 style="margin-bottom: 30px;">💳 Choose Your Plan</h2>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                        <div class="pricing-card">
+                            <h3>Free</h3>
+                            <div class="pricing-price">$0</div>
+                            <p style="color: var(--text-light); margin-bottom: 20px;">Forever free</p>
+                            <ul class="feature-list">
+                                <li>5 tasks</li>
+                                <li>1 project</li>
+                                <li>Basic features</li>
+                                <li>Local storage only</li>
+                            </ul>
+                            <button class="btn btn-secondary" style="width: 100%;">Current Plan</button>
+                        </div>
+                        
+                        <div class="pricing-card featured">
+                            <span class="premium-badge">MOST POPULAR</span>
+                            <h3>Premium</h3>
+                            <div class="pricing-price">$4.99<span style="font-size: 14px; color: var(--text-light);">/mo</span></div>
+                            <p style="color: var(--text-light); margin-bottom: 20px;">Billed monthly</p>
+                            <ul class="feature-list">
+                                <li>Unlimited tasks</li>
+                                <li>5 projects</li>
+                                <li>Team collaboration</li>
+                                <li>Cloud sync</li>
+                                <li>Email support</li>
+                            </ul>
+                            <button class="btn btn-primary" style="width: 100%;" onclick="purchaseStriped('premium')">Upgrade to Premium</button>
+                        </div>
+                        
+                        <div class="pricing-card">
+                            <h3>Pro</h3>
+                            <div class="pricing-price">$9.99<span style="font-size: 14px; color: var(--text-light);">/mo</span></div>
+                            <p style="color: var(--text-light); margin-bottom: 20px;">For power users</p>
+                            <ul class="feature-list">
+                                <li>Everything in Premium</li>
+                                <li>Unlimited projects</li>
+                                <li>Advanced analytics</li>
+                                <li>API access</li>
+                                <li>Priority support</li>
+                            </ul>
+                            <button class="btn btn-primary" style="width: 100%;" onclick="purchaseStriped('pro')">Upgrade to Pro</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="settings-page" class="page" style="display: none;">
+                    <h2 style="margin-bottom: 20px;">⚙️ Settings</h2>
+                    
+                    <div class="card">
+                        <div class="card-title">Account Settings</div>
+                        <div style="margin-bottom: 15px;">
+                            <label>Username</label><br>
+                            <input type="text" value="User" style="width: 100%; max-width: 300px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label>Email</label><br>
+                            <input type="email" value="user@example.com" style="width: 100%; max-width: 300px;">
+                        </div>
+                        <button class="btn btn-primary">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let currentPlan = localStorage.getItem('plan') || 'free';
+        
+        function showPage(pageName, event) {
+            if (event) event.preventDefault();
+            document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+            document.getElementById(pageName + '-page').style.display = 'block';
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            if (event && event.target.closest('.nav-item')) {
+                event.target.closest('.nav-item').classList.add('active');
+            }
+            if (pageName === 'dashboard') updateStats();
+            if (pageName === 'tasks') renderTasks();
+        }
+        
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+            localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+        }
+        
+        function addTask() {
+            const input = document.getElementById('taskInput');
+            if (!input.value.trim()) return;
+            
+            const task = {
+                id: Date.now(),
+                title: input.value,
+                priority: 'medium',
+                completed: false,
+                createdAt: new Date().toISOString()
+            };
+            
+            tasks.unshift(task);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            input.value = '';
+            renderTasks();
+            updateStats();
+        }
+        
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            renderTasks();
+            updateStats();
+        }
+        
+        function toggleTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.completed = !task.completed;
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+                renderTasks();
+                updateStats();
+            }
+        }
+        
+        function renderTasks() {
+            const list = document.getElementById('tasks-list');
+            if (!list) return;
+            
+            list.innerHTML = tasks.map(t => `
+                <div class="task-item ${t.completed ? 'completed' : ''}">
+                    <input type="checkbox" class="task-checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTask(${t.id})">
+                    <div class="task-content">
+                        <div class="task-title">${t.title}</div>
+                        <div class="task-meta">
+                            <span class="badge badge-priority-${t.priority}">🔴 ${t.priority.toUpperCase()}</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;" onclick="deleteTask(${t.id})">Delete</button>
+                </div>
+            `).join('') || '<div class="empty-state"><p>No tasks yet. Add one above!</p></div>';
+        }
+        
+        function updateStats() {
+            const total = tasks.length;
+            const completed = tasks.filter(t => t.completed).length;
+            const overdue = 0;
+            const completion = total === 0 ? 0 : Math.round((completed / total) * 100);
+            
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-completed').textContent = completed;
+            document.getElementById('stat-overdue').textContent = overdue;
+            document.getElementById('stat-completion').textContent = completion + '%';
+            
+            const recentTasks = document.getElementById('recent-tasks');
+            if (recentTasks) {
+                recentTasks.innerHTML = tasks.slice(0, 5).map(t => `
+                    <div class="task-item ${t.completed ? 'completed' : ''}">
+                        <input type="checkbox" class="task-checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTask(${t.id})">
+                        <div class="task-content">
+                            <div class="task-title">${t.title}</div>
+                        </div>
+                    </div>
+                `).join('') || '<div class="empty-state"><p>No tasks yet!</p></div>';
+            }
+        }
+        
+        function purchaseStriped(plan) {
+            alert(`Redirecting to Stripe payment for ${plan.toUpperCase()} plan...`);
+        }
+        
+        function filterTasks() {
+            // Implementation for filtering
+        }
+        
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark');
+        }
+        
+        renderTasks();
+        updateStats();
+    </script>
+</body>
+</html>
